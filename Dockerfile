@@ -216,37 +216,15 @@ RUN if [ -n "$OPENCLAW_INSTALL_DOCKER_CLI" ]; then \
 RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
  && chmod 755 /app/openclaw.mjs
 
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod 755 /app/docker-entrypoint.sh
+
 ENV NODE_ENV=production
 
-# Security hardening: Run as non-root user
-# The node:24-bookworm image includes a 'node' user (uid 1000)
-# This reduces the attack surface by preventing container escape via root privileges
-USER node
+# NOTE: No USER node here — the entrypoint runs as root to fix volume
+# permissions (chown), then drops to the node user via su before starting
+# the gateway. This mirrors the pattern used by docker-setup.sh.
 
-# Start gateway server with default config.
-# Binds to loopback (127.0.0.1) by default for security.
-#
-# IMPORTANT: With Docker bridge networking (-p 18789:18789), loopback bind
-# makes the gateway unreachable from the host. Either:
-#   - Use --network host, OR
-#   - Override --bind to "lan" (0.0.0.0) and set auth credentials
-#
-# Built-in probe endpoints for container health checks:
-#   - GET /healthz (liveness) and GET /readyz (readiness)
-#   - aliases: /health and /ready
-# For external access from host/ingress, override bind to "lan" and set auth.
 HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD node -e " \
-  const fs = require('fs'), os = require('os'); \
-  const dir = process.env.OPENCLAW_STATE_DIR || (os.homedir() + '/.openclaw'); \
-  fs.mkdirSync(dir, { recursive: true }); \
-  const file = dir + '/openclaw.json'; \
-  let cfg = {}; \
-  try { cfg = JSON.parse(fs.readFileSync(file, 'utf8')); } catch {} \
-  cfg.gateway = cfg.gateway || {}; \
-  cfg.gateway.controlUi = cfg.gateway.controlUi || {}; \
-  cfg.gateway.controlUi.allowedOrigins = ['https://openclaw-production-0420.up.railway.app']; \
-  fs.writeFileSync(file, JSON.stringify(cfg, null, 2)); \
-  console.log('Seeded controlUi.allowedOrigins in ' + file); \
-" && exec node openclaw.mjs gateway --allow-unconfigured --bind lan
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
