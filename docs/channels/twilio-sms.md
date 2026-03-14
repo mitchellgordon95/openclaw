@@ -51,7 +51,7 @@ DMs:
 
 - Default: `channels.twilio-sms.dmPolicy = "allowlist"`.
 - Set `allowFrom` to a list of E.164 phone numbers that are allowed to message.
-- Pairing mode: unknown senders receive a pairing code; approve via `openclaw pairing approve twilio-sms <CODE>`.
+- Pairing mode: unknown senders receive a pairing code; approve via `openclaw pairing approve twilio-sms <CODE>`. Pairing approval requires CLI access and is not available in the Control UI. For headless deployments (Docker, Railway), pre-populate `allowFrom` instead.
 - Open mode: any phone number can message (use with caution, especially without PIN auth).
 
 ```json5
