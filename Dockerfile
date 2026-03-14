@@ -237,7 +237,16 @@ USER node
 # For external access from host/ingress, override bind to "lan" and set auth.
 HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD mkdir -p "${OPENCLAW_STATE_DIR:-/home/node/.openclaw}" && \
-    node openclaw.mjs config set gateway.controlUi.allowedOrigins \
-      '["https://openclaw-production-0420.up.railway.app"]' --strict-json && \
-    exec node openclaw.mjs gateway --allow-unconfigured --bind lan
+CMD node -e " \
+  const fs = require('fs'), os = require('os'); \
+  const dir = process.env.OPENCLAW_STATE_DIR || (os.homedir() + '/.openclaw'); \
+  fs.mkdirSync(dir, { recursive: true }); \
+  const file = dir + '/openclaw.json'; \
+  let cfg = {}; \
+  try { cfg = JSON.parse(fs.readFileSync(file, 'utf8')); } catch {} \
+  cfg.gateway = cfg.gateway || {}; \
+  cfg.gateway.controlUi = cfg.gateway.controlUi || {}; \
+  cfg.gateway.controlUi.allowedOrigins = ['https://openclaw-production-0420.up.railway.app']; \
+  fs.writeFileSync(file, JSON.stringify(cfg, null, 2)); \
+  console.log('Seeded controlUi.allowedOrigins in ' + file); \
+" && exec node openclaw.mjs gateway --allow-unconfigured --bind lan
