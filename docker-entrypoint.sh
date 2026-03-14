@@ -16,7 +16,7 @@ if [ -n "$OPENCLAW_ORIGIN" ]; then
       const dir = '$STATE_DIR';
       const file = dir + '/openclaw.json';
       let cfg = {};
-      try { cfg = JSON.parse(fs.readFileSync(file, 'utf8')); } catch {}
+      if (fs.existsSync(file)) { cfg = JSON.parse(fs.readFileSync(file, 'utf8')); }
       cfg.gateway = cfg.gateway || {};
       cfg.gateway.controlUi = cfg.gateway.controlUi || {};
       cfg.gateway.controlUi.allowedOrigins = ['$OPENCLAW_ORIGIN'];
