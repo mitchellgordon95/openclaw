@@ -50,7 +50,7 @@ export {
   buildComputedAccountStatusSnapshot,
   buildProbeChannelStatusSummary,
 } from "./status-helpers.js";
-export { createAccountStatusSink } from "./channel-lifecycle.js";
+export { createAccountStatusSink, waitUntilAbort } from "./channel-lifecycle.js";
 
 export { resolveInboundRouteEnvelopeBuilderWithRuntime } from "./inbound-envelope.js";
 export { createScopedPairingAccess } from "./pairing-access.js";

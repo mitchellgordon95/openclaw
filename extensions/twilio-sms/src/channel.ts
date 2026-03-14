@@ -20,6 +20,7 @@ import {
   normalizeE164,
   PAIRING_APPROVED_MESSAGE,
   setAccountEnabledInConfigSection,
+  waitUntilAbort,
 } from "openclaw/plugin-sdk/twilio-sms";
 import type { ChannelSetupInput } from "openclaw/plugin-sdk/twilio-sms";
 import {
@@ -312,7 +313,12 @@ export const twilioSmsPlugin: ChannelPlugin<ResolvedTwilioSmsAccount> = {
         statusSink: (patch) => statusSink(patch),
       });
 
-      return unregister;
+      // Keep this task alive until abort so gateway runtime does not treat
+      // startup as exit (which triggers an auto-restart loop).
+      await waitUntilAbort(ctx.abortSignal, () => {
+        ctx.log?.info(`[${account.accountId}] stopping Twilio SMS`);
+        unregister();
+      });
     },
   },
 };
