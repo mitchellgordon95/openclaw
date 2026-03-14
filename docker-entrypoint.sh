@@ -20,6 +20,7 @@ if [ -n "$OPENCLAW_ORIGIN" ]; then
       cfg.gateway = cfg.gateway || {};
       cfg.gateway.controlUi = cfg.gateway.controlUi || {};
       cfg.gateway.controlUi.allowedOrigins = ['$OPENCLAW_ORIGIN'];
+      cfg.gateway.controlUi.dangerouslyDisableDeviceAuth = true;
       cfg.gateway.trustedProxies = ['100.64.0.0/10', '10.0.0.0/8', '172.16.0.0/12'];
       fs.writeFileSync(file, JSON.stringify(cfg, null, 2));
       console.log('Seeded controlUi.allowedOrigins =', ['$OPENCLAW_ORIGIN']);
