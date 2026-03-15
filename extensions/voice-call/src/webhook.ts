@@ -124,6 +124,7 @@ export class VoiceCallWebhookServer {
         return true;
       },
       onTranscript: (providerCallId, transcript) => {
+        try { require("fs").appendFileSync("/tmp/voice-debug.log", new Date().toISOString() + ` onTranscript: providerCallId=${providerCallId} transcript="${transcript}"\n`); } catch {}
         console.log(`[voice-call] Transcript for ${providerCallId}: ${transcript}`);
 
         // Clear TTS queue on barge-in (user started speaking, interrupt current playback)
@@ -445,22 +446,31 @@ export class VoiceCallWebhookServer {
    * Supports tool calling for richer voice interactions.
    */
   private async handleInboundResponse(callId: string, userMessage: string): Promise<void> {
+    const dbg = (msg: string) => { try { require("fs").appendFileSync("/tmp/voice-debug.log", new Date().toISOString() + " " + msg + "\n"); } catch {} };
+    dbg(`handleInboundResponse called: callId=${callId} msg="${userMessage}"`);
     console.log(`[voice-call] Auto-responding to inbound call ${callId}: "${userMessage}"`);
 
     // Get call context for conversation history
     const call = this.manager.getCall(callId);
     if (!call) {
+      dbg("BAIL: call not found");
       console.warn(`[voice-call] Call ${callId} not found for auto-response`);
       return;
     }
 
     if (!this.coreConfig) {
+      dbg("BAIL: coreConfig is null/undefined");
       console.warn("[voice-call] Core config missing; skipping auto-response");
       return;
     }
 
+    dbg(`coreConfig exists, has keys: ${Object.keys(this.coreConfig).join(",")}`);
+
     try {
+      dbg("Loading response generator...");
       const { generateVoiceResponse } = await import("./response-generator.js");
+      dbg(`Calling generateVoiceResponse...`);
+      const startTime = Date.now();
 
       const result = await generateVoiceResponse({
         voiceConfig: this.config,
@@ -471,6 +481,8 @@ export class VoiceCallWebhookServer {
         userMessage,
       });
 
+      dbg(`generateVoiceResponse done in ${Date.now() - startTime}ms: text=${result.text?.slice(0, 80)} error=${result.error}`);
+
       if (result.error) {
         console.error(`[voice-call] Response generation error: ${result.error}`);
         return;
@@ -478,9 +490,14 @@ export class VoiceCallWebhookServer {
 
       if (result.text) {
         console.log(`[voice-call] AI response: "${result.text}"`);
+        const callStillActive = this.manager.getCall(callId);
+        dbg(`About to speak. Call active? ${!!callStillActive} state=${callStillActive?.state}`);
         await this.manager.speak(callId, result.text);
+        dbg("speak() completed");
       }
     } catch (err) {
+      const msg = err instanceof Error ? err.message + "\n" + (err.stack?.slice(0, 500) || "") : String(err);
+      dbg(`CATCH ERROR: ${msg}`);
       console.error(`[voice-call] Auto-response error:`, err);
     }
   }
