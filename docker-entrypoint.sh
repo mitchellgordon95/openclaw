@@ -39,5 +39,12 @@ if [ -d "$STATE_DIR/.ssh" ]; then
   chmod 700 /home/node/.ssh
 fi
 
+# Symlink persistent Railway CLI config if it exists.
+if [ -d "$STATE_DIR/.railway" ]; then
+  mkdir -p /home/node/.railway
+  ln -sf "$STATE_DIR/.railway/config.json" /home/node/.railway/config.json
+  chown -h node:node /home/node/.railway /home/node/.railway/config.json
+fi
+
 # Drop to node user and start the gateway.
 exec su -s /bin/sh node -c "exec node openclaw.mjs gateway --allow-unconfigured --bind lan"
