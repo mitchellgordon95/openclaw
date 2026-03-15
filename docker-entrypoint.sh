@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
 
-STATE_DIR="${OPENCLAW_STATE_DIR:-/home/node/.openclaw}"
+STATE_DIR="${OPENCLAW_STATE_DIR:-${OPENCLAW_HOME:+$OPENCLAW_HOME/.openclaw}}"
+STATE_DIR="${STATE_DIR:-/home/node/.openclaw}"
 
 # Fix volume permissions (runs as root in the entrypoint).
 mkdir -p "$STATE_DIR"
