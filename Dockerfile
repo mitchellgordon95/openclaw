@@ -168,6 +168,21 @@ RUN if [ -n "$OPENCLAW_DOCKER_APT_PACKAGES" ]; then \
       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $OPENCLAW_DOCKER_APT_PACKAGES; \
     fi
 
+# Optionally install GitHub CLI and Railway CLI for agent use.
+# Build with: docker build --build-arg OPENCLAW_INSTALL_DEV_CLIS=1 ...
+ARG OPENCLAW_INSTALL_DEV_CLIS=""
+RUN if [ -n "$OPENCLAW_INSTALL_DEV_CLIS" ]; then \
+      mkdir -p /etc/apt/keyrings && \
+      curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        -o /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+      chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+      printf 'deb [arch=%s signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\n' \
+        "$(dpkg --print-architecture)" > /etc/apt/sources.list.d/github-cli.list && \
+      apt-get update && \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gh && \
+      npm install -g @railway/cli; \
+    fi
+
 # Optionally install Chromium and Xvfb for browser automation.
 # Build with: docker build --build-arg OPENCLAW_INSTALL_BROWSER=1 ...
 # Adds ~300MB but eliminates the 60-90s Playwright install on every container start.
