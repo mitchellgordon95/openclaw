@@ -202,7 +202,11 @@ RUN if [ -n "$OPENCLAW_INSTALL_DEV_CLIS" ]; then \
         "$(dpkg --print-architecture)" > /etc/apt/sources.list.d/github-cli.list && \
       apt-get update && \
       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gh && \
-      npm install -g @railway/cli; \
+      npm install -g @railway/cli && \
+      curl -sSL -o /tmp/ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip && \
+      unzip -o /tmp/ngrok.zip -d /usr/local/bin/ && \
+      rm /tmp/ngrok.zip && \
+      chmod +x /usr/local/bin/ngrok; \
     fi
 
 # Optionally install Chromium and Xvfb for browser automation.
