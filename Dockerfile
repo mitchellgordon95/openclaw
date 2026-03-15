@@ -168,6 +168,28 @@ RUN if [ -n "$OPENCLAW_DOCKER_APT_PACKAGES" ]; then \
       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $OPENCLAW_DOCKER_APT_PACKAGES; \
     fi
 
+# Optionally install Go and Go-based tools for skills/extensions.
+# OPENCLAW_INSTALL_GO=1 installs the Go toolchain.
+# OPENCLAW_GO_INSTALL is a space-separated list of `go install` targets.
+# Example: docker build --build-arg OPENCLAW_INSTALL_GO=1 \
+#   --build-arg OPENCLAW_GO_INSTALL="github.com/steipete/wacli/cmd/wacli@latest" .
+ARG OPENCLAW_INSTALL_GO=""
+ARG OPENCLAW_GO_INSTALL=""
+RUN if [ -n "$OPENCLAW_INSTALL_GO" ]; then \
+      curl -fsSL https://go.dev/dl/go1.24.1.linux-amd64.tar.gz | tar -C /usr/local -xz && \
+      export PATH="/usr/local/go/bin:$PATH" && \
+      go version && \
+      if [ -n "$OPENCLAW_GO_INSTALL" ]; then \
+        export GOPATH=/usr/local/gopath && \
+        for pkg in $OPENCLAW_GO_INSTALL; do \
+          echo "Installing: $pkg" && \
+          go install "$pkg"; \
+        done && \
+        ln -sf /usr/local/gopath/bin/* /usr/local/bin/ && \
+        rm -rf /usr/local/gopath/pkg; \
+      fi; \
+    fi
+
 # Optionally install GitHub CLI and Railway CLI for agent use.
 # Build with: docker build --build-arg OPENCLAW_INSTALL_DEV_CLIS=1 ...
 ARG OPENCLAW_INSTALL_DEV_CLIS=""

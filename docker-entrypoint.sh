@@ -39,13 +39,6 @@ if [ -d "$STATE_DIR/.ssh" ]; then
   chmod 700 /home/node/.ssh
 fi
 
-# Symlink persistent Go binaries (e.g. wacli) into PATH.
-if [ -d "$STATE_DIR/gopath/bin" ]; then
-  for bin in "$STATE_DIR/gopath/bin"/*; do
-    [ -f "$bin" ] && ln -sf "$bin" "/usr/local/bin/$(basename "$bin")"
-  done
-fi
-
 # Symlink persistent Railway CLI config if it exists.
 if [ -d "$STATE_DIR/.railway" ]; then
   mkdir -p /home/node/.railway
