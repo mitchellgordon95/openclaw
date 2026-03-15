@@ -39,6 +39,12 @@ if [ -d "$STATE_DIR/.ssh" ]; then
   chmod 700 /home/node/.ssh
 fi
 
+# Create a stable symlink to the Playwright Chromium binary (version-independent).
+PW_CHROME=$(ls /home/node/.cache/ms-playwright/chromium-*/chrome-linux64/chrome 2>/dev/null | head -1)
+if [ -n "$PW_CHROME" ]; then
+  ln -sf "$PW_CHROME" /usr/local/bin/chromium
+fi
+
 # Symlink persistent Railway CLI config if it exists.
 if [ -d "$STATE_DIR/.railway" ]; then
   mkdir -p /home/node/.railway
