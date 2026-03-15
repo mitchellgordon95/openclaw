@@ -28,5 +28,15 @@ if [ -n "$OPENCLAW_ORIGIN" ]; then
   "
 fi
 
+# Symlink persistent SSH keys into the node user's home if they exist.
+if [ -d "$STATE_DIR/.ssh" ]; then
+  mkdir -p /home/node/.ssh
+  for key in "$STATE_DIR/.ssh"/*; do
+    [ -f "$key" ] && ln -sf "$key" "/home/node/.ssh/$(basename "$key")"
+  done
+  chown -h node:node /home/node/.ssh /home/node/.ssh/*
+  chmod 700 /home/node/.ssh
+fi
+
 # Drop to node user and start the gateway.
 exec su -s /bin/sh node -c "exec node openclaw.mjs gateway --allow-unconfigured --bind lan"
